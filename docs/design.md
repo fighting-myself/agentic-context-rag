@@ -258,3 +258,14 @@
 - 已完成：
   - `backend/requirements.txt` 已将 `fastapi` 从 `0.115.12` 调整为 `0.115.9`。
   - 该版本与 `chromadb==1.0.7` 的依赖约束一致，解决构建阶段冲突。
+
+## 27. 启动异常修复（编码前更新）
+- 本轮目标：
+  - 修复后端容器启动时报错 `ModuleNotFoundError: pythonjsonlogger.json`。
+- 具体改动点：
+  - 修正 `backend/app/core/logging.py` 中 `python-json-logger` 的导入路径。
+
+## 28. 启动异常修复（编码后更新）
+- 已完成：
+  - `backend/app/core/logging.py` 导入已改为 `from pythonjsonlogger.jsonlogger import JsonFormatter`。
+  - 与 `python-json-logger==2.0.7` 的实际模块路径一致，可消除该启动异常。
