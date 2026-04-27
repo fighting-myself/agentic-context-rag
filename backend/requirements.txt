@@ -11,3 +11,4 @@ sqlalchemy==2.0.40
 pydantic-settings==2.9.1
 python-json-logger==2.0.7
 python-multipart==0.0.20
+dashscope==1.15.0
