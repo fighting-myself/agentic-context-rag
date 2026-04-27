@@ -37,6 +37,31 @@
 - 后端: `http://localhost:8501/healthz`
 - 前端通过 Nginx 反向代理 `/api/*` 到后端容器（同机部署默认已打通）。
 
+### 3.3 分别构建前后端镜像
+- 构建后端镜像（项目根目录执行）：
+  - `docker build -t agentic-rag-backend:latest ./backend`
+- 构建前端镜像（项目根目录执行）：
+  - `docker build -t agentic-rag-frontend:latest ./frontend`
+
+### 3.4 分别启动前后端容器（同一网络）
+1. 先创建自定义网络（如不存在）：
+   - `docker network create agentic-rag-net`
+2. 启动后端：
+   - `docker run -d --name agentic-rag-backend --network agentic-rag-net --env-file ./backend/.env.example -p 8501:8000 -v ./backend/data:/app/backend/data -v ./backend/logs:/app/backend/logs agentic-rag-backend:latest`
+3. 启动前端：
+   - `docker run -d --name agentic-rag-frontend --network agentic-rag-net -p 8500:80 agentic-rag-frontend:latest`
+
+### 3.5 前后端不在同一网络时（必须先创建并加入同一网络）
+- 如果容器已在不同网络，先创建目标网络：
+  - `docker network create agentic-rag-net`
+- 将后端加入目标网络：
+  - `docker network connect agentic-rag-net agentic-rag-backend`
+- 将前端加入目标网络：
+  - `docker network connect agentic-rag-net agentic-rag-frontend`
+- 可选：从旧网络移除
+  - `docker network disconnect <old_network> agentic-rag-backend`
+  - `docker network disconnect <old_network> agentic-rag-frontend`
+
 ## 4. API 简介
 - `POST /api/v1/knowledge/upsert`
   - 请求体：`{"docs":[{"text":"知识内容","source":"manual"}]}`
