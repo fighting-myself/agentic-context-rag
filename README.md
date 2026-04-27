@@ -64,12 +64,18 @@
   - `docker network disconnect <old_network> agentic-rag-frontend`
 
 ## 4. API 简介
+- `GET /api/v1/knowledge-bases`：列出知识库。
+- `POST /api/v1/knowledge-bases`：创建知识库，请求体 `{"name":"名称","description":""}`。
+- `DELETE /api/v1/knowledge-bases/{kb_id}`：删除知识库（不可删 `default`）。
+- `GET /api/v1/knowledge-bases/{kb_id}/documents`：文档列表。
+- `DELETE /api/v1/knowledge-bases/{kb_id}/documents/{doc_id}`：删除文档及对应向量。
+- `POST /api/v1/knowledge-bases/{kb_id}/upload`：`multipart/form-data`，字段 `file`、`chunk_size`、`overlap`。
 - `POST /api/v1/knowledge/upsert`
-  - 请求体：`{"docs":[{"text":"知识内容","source":"manual"}]}`
+  - 请求体：`{"kb_id":"default","chunk_size":500,"overlap":80,"docs":[{"text":"知识内容","source":"manual"}]}`
 - `POST /api/v1/chat`
-  - 请求体：`{"session_id":"s1","question":"你的问题"}`
+  - 请求体：`{"session_id":"s1","kb_id":"default","question":"你的问题"}`
 - `POST /api/v1/chat/stream`
-  - 请求体：`{"session_id":"s1","question":"你的问题"}`
+  - 请求体：`{"session_id":"s1","kb_id":"default","question":"你的问题"}`
   - 返回：`SSE(text/event-stream)`，事件类型包含 `meta/token/done`
 - `GET /api/v1/sessions/{session_id}/history`
 - `GET /api/v1/traces/{session_id}?limit=20`

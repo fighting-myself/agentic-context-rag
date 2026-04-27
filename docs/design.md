@@ -283,3 +283,22 @@
   - 新增 `frontend/templates/default.conf.template`，`proxy_pass` 使用 `${BACKEND_HOST}`。
   - `frontend/Dockerfile` 默认 `ENV BACKEND_HOST=backend`，并复制模板到 `/etc/nginx/templates/`。
   - 删除写死 upstream 的 `frontend/nginx.conf`，避免与单独部署场景冲突。
+
+## 31. 知识库管理与 UI 改版（编码前更新）
+- 本轮目标：
+  - 前端界面现代化（布局、配色、组件层次）。
+  - 支持文件上传入库、可配置分块大小与重叠。
+  - 支持创建/列出/删除知识库，以及按库管理文档（列表与删除）。
+  - 对话绑定当前选中的知识库（`kb_id`），检索与缓存键随库变化。
+- 具体改动点：
+  - SQLite：`knowledge_bases`、`knowledge_documents` 表；初始化默认库 `default`。
+  - Chroma：按 `kb_{id}` 分集合存储向量；删除库/文档时同步清理向量。
+  - API：`/knowledge-bases` CRUD、`/knowledge-bases/{id}/upload` 多部分上传、`/knowledge-bases/{id}/documents` 列表与删除。
+  - 聊天请求体增加 `kb_id`；`CacheService.build_key` 纳入 `kb_id`。
+  - 前端：`App.css` + 重构 `App.jsx`、`api.js`。
+
+## 32. 知识库管理与 UI 改版（编码后更新）
+- 已完成：
+  - 后端：`MemoryService` 增加知识库与文档元数据表；`KnowledgeBaseService` 按 `kb_{id}` 分 Chroma 集合；检索与对话支持 `kb_id`；`python-multipart` 支持上传。
+  - API：`POST/GET/DELETE /knowledge-bases`、`GET/DELETE .../documents`、`POST .../upload`；`/knowledge/upsert` 与 `/chat` 支持 `kb_id` 与分块参数；文本入库写入文档记录。
+  - 前端：深色主题双栏布局、知识库切换/创建/删除、分块参数、拖放上传、文档表、对话气泡与性能区。
