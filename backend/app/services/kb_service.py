@@ -23,7 +23,7 @@ class KnowledgeBaseService:
         self.client = chromadb.PersistentClient(path=self.settings.chroma_path)
         self.embedder = DashScopeEmbeddings(
             model=self.settings.qwen_embedding_model,
-            api_key=self.settings.qwen_api_key,
+            dashscope_api_key=self.settings.qwen_api_key,
         )
 
     @staticmethod
