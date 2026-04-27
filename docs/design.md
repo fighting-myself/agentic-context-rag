@@ -247,3 +247,14 @@
   - `README.md` 新增“分别构建前后端镜像”命令。
   - `README.md` 新增“分别启动前后端容器（同一网络）”完整命令。
   - `README.md` 新增“前后端不在同一网络时”网络创建、连接、断开示例命令。
+
+## 25. 依赖冲突修复（编码前更新）
+- 本轮目标：
+  - 修复 Docker 构建时 `fastapi` 与 `chromadb` 的版本冲突。
+- 具体改动点：
+  - 调整 `backend/requirements.txt` 中 `fastapi` 版本，使其与 `chromadb==1.0.7` 兼容。
+
+## 26. 依赖冲突修复（编码后更新）
+- 已完成：
+  - `backend/requirements.txt` 已将 `fastapi` 从 `0.115.12` 调整为 `0.115.9`。
+  - 该版本与 `chromadb==1.0.7` 的依赖约束一致，解决构建阶段冲突。
