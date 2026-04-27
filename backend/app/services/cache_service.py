@@ -40,6 +40,7 @@ class CacheService:
 
     @classmethod
     def build_key(
+        cls,
         session_id: str,
         question: str,
         history: list[dict[str, Any]],

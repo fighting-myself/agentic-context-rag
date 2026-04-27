@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass
 
 import chromadb
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import DashScopeEmbeddings
 
 from app.core.config import get_settings
 
@@ -21,10 +21,9 @@ class KnowledgeBaseService:
         self.settings = get_settings()
         os.makedirs(self.settings.chroma_path, exist_ok=True)
         self.client = chromadb.PersistentClient(path=self.settings.chroma_path)
-        self.embedder = OpenAIEmbeddings(
+        self.embedder = DashScopeEmbeddings(
             model=self.settings.qwen_embedding_model,
             api_key=self.settings.qwen_api_key,
-            base_url=self.settings.qwen_base_url,
         )
 
     @staticmethod
