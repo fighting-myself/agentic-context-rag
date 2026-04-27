@@ -52,6 +52,39 @@ class MemoryService:
                 "CREATE INDEX IF NOT EXISTS idx_traces_session_time "
                 "ON traces(session_id, created_at);"
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS knowledge_bases (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    created_at TEXT NOT NULL
+                );
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS knowledge_documents (
+                    id TEXT PRIMARY KEY,
+                    kb_id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    source_type TEXT NOT NULL,
+                    chunk_count INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (kb_id) REFERENCES knowledge_bases(id)
+                );
+                """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_kb_docs_kb ON knowledge_documents(kb_id, created_at);"
+            )
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO knowledge_bases(id, name, description, created_at)
+                VALUES('default', '默认知识库', '', ?)
+                """,
+                (datetime.utcnow().isoformat(),),
+            )
 
     def add_message(self, session_id: str, role: str, content: str) -> None:
         with self._connect() as conn:
@@ -161,3 +194,88 @@ class MemoryService:
             "p50_ttft_ms": round(self._percentile(ttft_values, 0.5), 2),
             "p95_ttft_ms": round(self._percentile(ttft_values, 0.95), 2),
         }
+
+    def knowledge_base_exists(self, kb_id: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM knowledge_bases WHERE id = ? LIMIT 1",
+                (kb_id,),
+            ).fetchone()
+        return row is not None
+
+    def create_knowledge_base(self, kb_id: str, name: str, description: str = "") -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO knowledge_bases(id, name, description, created_at) VALUES(?, ?, ?, ?)",
+                (kb_id, name, description, datetime.utcnow().isoformat()),
+            )
+
+    def list_knowledge_bases(self) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT id, name, description, created_at FROM knowledge_bases ORDER BY created_at ASC"
+            ).fetchall()
+        return [
+            {"id": r[0], "name": r[1], "description": r[2] or "", "created_at": r[3]}
+            for r in rows
+        ]
+
+    def delete_knowledge_base(self, kb_id: str) -> None:
+        if kb_id == "default":
+            raise ValueError("cannot_delete_default_kb")
+        with self._connect() as conn:
+            conn.execute("DELETE FROM knowledge_documents WHERE kb_id = ?", (kb_id,))
+            conn.execute("DELETE FROM knowledge_bases WHERE id = ?", (kb_id,))
+
+    def add_kb_document(
+        self,
+        doc_id: str,
+        kb_id: str,
+        title: str,
+        source_type: str,
+        chunk_count: int,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO knowledge_documents(id, kb_id, title, source_type, chunk_count, created_at)
+                VALUES(?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    doc_id,
+                    kb_id,
+                    title,
+                    source_type,
+                    chunk_count,
+                    datetime.utcnow().isoformat(),
+                ),
+            )
+
+    def list_kb_documents(self, kb_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, title, source_type, chunk_count, created_at
+                FROM knowledge_documents
+                WHERE kb_id = ?
+                ORDER BY created_at DESC
+                """,
+                (kb_id,),
+            ).fetchall()
+        return [
+            {
+                "id": r[0],
+                "title": r[1],
+                "source_type": r[2],
+                "chunk_count": r[3],
+                "created_at": r[4],
+            }
+            for r in rows
+        ]
+
+    def delete_kb_document(self, kb_id: str, doc_id: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "DELETE FROM knowledge_documents WHERE kb_id = ? AND id = ?",
+                (kb_id, doc_id),
+            )

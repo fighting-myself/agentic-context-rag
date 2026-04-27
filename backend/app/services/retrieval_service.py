@@ -22,9 +22,10 @@ class RetrievalService:
             return 0.0
         return len(sa & sb) / len(sa | sb)
 
-    def retrieve(self, question: str) -> list[dict[str, Any]]:
+    def retrieve(self, question: str, kb_id: str = "default") -> list[dict[str, Any]]:
+        collection = self.kb_service.get_collection(kb_id)
         embedding = self.kb_service.embedder.embed_query(question)
-        vector_res = self.kb_service.collection.query(
+        vector_res = collection.query(
             query_embeddings=[embedding],
             n_results=max(self.settings.retrieve_k_vector, self.settings.retrieve_k_final * 3),
             include=["documents", "metadatas", "distances"],

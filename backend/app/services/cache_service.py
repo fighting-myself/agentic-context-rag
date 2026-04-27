@@ -39,9 +39,15 @@ class CacheService:
         return normalized
 
     @classmethod
-    def build_key(session_id: str, question: str, history: list[dict[str, Any]]) -> str:
+    def build_key(
+        session_id: str,
+        question: str,
+        history: list[dict[str, Any]],
+        kb_id: str = "default",
+    ) -> str:
         raw = json.dumps(
             {
+                "kb_id": kb_id.strip() or "default",
                 "session_id": session_id,
                 "question": CacheService._normalize_text(question),
                 "history": CacheService._normalize_history(history),

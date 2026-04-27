@@ -14,6 +14,7 @@ from app.services.retrieval_service import RetrievalService
 
 class ChatState(TypedDict):
     session_id: str
+    kb_id: str
     question: str
     rewritten_question: str
     intent: str
@@ -150,7 +151,9 @@ class ChatService:
         history = self.memory_service.get_recent_messages(state["session_id"])
         rewritten = self._rewrite_question(state["question"], history)
         intent = self._classify_intent(rewritten)
-        cache_key = self.cache_service.build_key(state["session_id"], rewritten, history)
+        cache_key = self.cache_service.build_key(
+            state["session_id"], rewritten, history, state.get("kb_id", "default")
+        )
         state["history"] = history
         state["rewritten_question"] = rewritten
         state["intent"] = intent
@@ -159,7 +162,9 @@ class ChatService:
         return state
 
     def _retrieve(self, state: ChatState) -> ChatState:
-        state["contexts"] = self.retrieval_service.retrieve(state["rewritten_question"])
+        state["contexts"] = self.retrieval_service.retrieve(
+            state["rewritten_question"], state.get("kb_id", "default")
+        )
         return state
 
     def _cache_lookup(self, state: ChatState) -> ChatState:
@@ -215,10 +220,11 @@ class ChatService:
         )
         return state
 
-    def ask(self, session_id: str, question: str, trace_id: str) -> dict[str, Any]:
+    def ask(self, session_id: str, question: str, trace_id: str, kb_id: str = "default") -> dict[str, Any]:
         total_start = time.perf_counter()
         state: ChatState = {
             "session_id": session_id,
+            "kb_id": kb_id or "default",
             "question": question,
             "rewritten_question": question,
             "intent": "fact",
@@ -262,13 +268,14 @@ class ChatService:
             },
         }
 
-    async def stream_ask(self, session_id: str, question: str, trace_id: str):
+    async def stream_ask(self, session_id: str, question: str, trace_id: str, kb_id: str = "default"):
         total_start = time.perf_counter()
+        kb = kb_id or "default"
         history = self.memory_service.get_recent_messages(session_id)
         rewritten_question = self._rewrite_question(question, history)
         intent = self._classify_intent(rewritten_question)
-        cache_key = self.cache_service.build_key(session_id, rewritten_question, history)
-        contexts = self.retrieval_service.retrieve(rewritten_question)
+        cache_key = self.cache_service.build_key(session_id, rewritten_question, history, kb)
+        contexts = self.retrieval_service.retrieve(rewritten_question, kb)
         retrieve_ms = (time.perf_counter() - total_start) * 1000
 
         cached = self.cache_service.get(cache_key)
