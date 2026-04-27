@@ -105,6 +105,12 @@ export async function listKbDocuments(kbId) {
   return await res.json();
 }
 
+export async function getDocumentContent(kbId, source) {
+  const res = await fetch(`${API_BASE}/knowledge-bases/${encodeURIComponent(kbId)}/documents/${encodeURIComponent(source)}/content`);
+  if (!res.ok) throw new Error(`get doc content failed: ${res.status}`);
+  return await res.json();
+}
+
 export async function deleteKbDocument(kbId, docId) {
   const res = await fetch(
     `${API_BASE}/knowledge-bases/${encodeURIComponent(kbId)}/documents/${encodeURIComponent(docId)}`,

@@ -134,6 +134,13 @@ def list_kb_documents(kb_id: str) -> dict[str, Any]:
     return {"kb_id": kb_id, "documents": memory_service.list_kb_documents(kb_id)}
 
 
+@router.get("/knowledge-bases/{kb_id}/documents/{source}/content")
+def get_document_content(kb_id: str, source: str) -> dict[str, Any]:
+    _require_kb(kb_id)
+    content = kb_service.get_document_content(kb_id, source)
+    return {"kb_id": kb_id, "source": source, "content": content}
+
+
 @router.delete("/knowledge-bases/{kb_id}/documents/{doc_id}")
 def delete_kb_document(kb_id: str, doc_id: str) -> dict[str, Any]:
     _require_kb(kb_id)

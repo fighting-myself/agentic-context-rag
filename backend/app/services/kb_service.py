@@ -63,16 +63,19 @@ class KnowledgeBaseService:
         for d in docs:
             source = d.get("source", "manual")
             extra = {k: v for k, v in d.items() if k not in ("text", "source")}
+            chunk_index = 0
             for text in self.split_text(d["text"], chunk_size=chunk_size, overlap=overlap):
                 chunk_id = uuid.uuid4().hex
                 meta = {
                     "kb_id": kb_id,
                     "source": str(source),
+                    "chunk_index": chunk_index,
                     **{k: str(v) for k, v in extra.items() if v is not None},
                 }
                 if doc_id:
                     meta["doc_id"] = doc_id
                 chunks.append(KBChunk(chunk_id=chunk_id, text=text, metadata=meta))
+                chunk_index += 1
 
         if not chunks:
             return 0
@@ -97,3 +100,24 @@ class KnowledgeBaseService:
     def delete_document_vectors(self, kb_id: str, doc_id: str) -> None:
         collection = self.get_collection(kb_id)
         collection.delete(where={"doc_id": doc_id})
+
+    def get_document_content(self, kb_id: str, source: str) -> str:
+        collection = self.get_collection(kb_id)
+        results = collection.get(where={"source": source})
+        if not results or not results.get("documents"):
+            return ""
+        
+        documents = results["documents"]
+        metadatas = results.get("metadatas", [])
+        
+        sorted_chunks = []
+        for i, doc in enumerate(documents):
+            metadata = metadatas[i] if i < len(metadatas) else {}
+            sorted_chunks.append({
+                "text": doc,
+                "metadata": metadata
+            })
+        
+        sorted_chunks.sort(key=lambda x: x["metadata"].get("chunk_index", 0))
+        
+        return "\n\n".join([chunk["text"] for chunk in sorted_chunks])

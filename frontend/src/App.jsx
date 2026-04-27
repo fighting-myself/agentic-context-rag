@@ -3,6 +3,7 @@ import {
   createKnowledgeBase,
   deleteKbDocument,
   deleteKnowledgeBase,
+  getDocumentContent,
   getTraceStats,
   getTraces,
   listKbDocuments,
@@ -246,16 +247,19 @@ export default function App() {
     if (f) setPendingFile(f);
   };
 
-  const onViewFile = (source, highlight) => {
-    // 这里简化处理，实际项目中应该从后端获取文件内容
-    // 现在使用模拟数据
-    const mockContent = `# ${source}\n\n这是文件 ${source} 的内容。\n\n${highlight ? `这里是高亮显示的引用内容：${highlight}` : ""}\n\n文件的其他内容...`;
-    setFileViewer({
-      visible: true,
-      source,
-      content: mockContent,
-      highlight,
-    });
+  const onViewFile = async (source, highlight) => {
+    try {
+      const res = await getDocumentContent(selectedKbId, source);
+      const content = res.content || "";
+      setFileViewer({
+        visible: true,
+        source,
+        content,
+        highlight,
+      });
+    } catch (e) {
+      alert(e.message);
+    }
   };
 
   const closeFileViewer = () => {
@@ -503,17 +507,32 @@ export default function App() {
               <button className="modal-close" onClick={closeFileViewer}>×</button>
             </div>
             <div className="modal-body">
-              <pre className="file-content">
-                {fileViewer.content.split('\n').map((line, i) => (
-                  <div key={i}>
-                    {line.includes(fileViewer.highlight) ? (
-                      <span className="highlight">{line}</span>
-                    ) : (
-                      line
-                    )}
-                  </div>
-                ))}
-              </pre>
+              <div className="file-content">
+                {fileViewer.content.split('\n').map((line, i) => {
+                  if (!fileViewer.highlight) {
+                    return <div key={i}>{line}</div>;
+                  }
+                  
+                  const highlightText = fileViewer.highlight.trim();
+                  if (!highlightText) {
+                    return <div key={i}>{line}</div>;
+                  }
+                  
+                  const parts = line.split(new RegExp(`(${highlightText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+                  return (
+                    <div key={i}>
+                      {parts.map((part, j) => {
+                        const isMatch = part.toLowerCase() === highlightText.toLowerCase();
+                        return isMatch ? (
+                          <span key={j} className="highlight">{part}</span>
+                        ) : (
+                          <span key={j}>{part}</span>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={closeFileViewer}>
