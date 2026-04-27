@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 from datetime import datetime
@@ -77,6 +78,30 @@ class MemoryService:
             )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_kb_docs_kb ON knowledge_documents(kb_id, created_at);"
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS history_summaries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    start_index INTEGER NOT NULL,
+                    end_index INTEGER NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_history_summaries_session ON history_summaries(session_id, end_index);"
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS session_state (
+                    session_id TEXT PRIMARY KEY,
+                    state JSON NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+                """
             )
             conn.execute(
                 """
@@ -279,3 +304,51 @@ class MemoryService:
                 "DELETE FROM knowledge_documents WHERE kb_id = ? AND id = ?",
                 (kb_id, doc_id),
             )
+
+    def add_history_summary(self, session_id: str, summary: str, start_index: int, end_index: int) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO history_summaries(session_id, summary, start_index, end_index, created_at) VALUES(?, ?, ?, ?, ?)",
+                (session_id, summary, start_index, end_index, datetime.utcnow().isoformat()),
+            )
+
+    def get_history_summaries(self, session_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT summary, start_index, end_index, created_at FROM history_summaries WHERE session_id = ? ORDER BY end_index ASC",
+                (session_id,),
+            ).fetchall()
+        return [
+            {
+                "summary": r[0],
+                "start_index": r[1],
+                "end_index": r[2],
+                "created_at": r[3],
+            }
+            for r in rows
+        ]
+
+    def update_session_state(self, session_id: str, state: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO session_state(session_id, state, updated_at) VALUES(?, ?, ?)",
+                (session_id, json.dumps(state, ensure_ascii=False), datetime.utcnow().isoformat()),
+            )
+
+    def get_session_state(self, session_id: str) -> dict[str, Any]:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT state FROM session_state WHERE session_id = ? LIMIT 1",
+                (session_id,),
+            ).fetchone()
+        if row:
+            return json.loads(row[0])
+        return {}
+
+    def get_message_count(self, session_id: str) -> int:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM messages WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
+        return row[0] if row else 0

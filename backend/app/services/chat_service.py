@@ -20,6 +20,7 @@ class ChatState(TypedDict):
     intent: str
     trace_id: str
     history: list[dict[str, Any]]
+    session_state: dict[str, Any]
     contexts: list[dict[str, Any]]
     answer: str
     cache_key: str
@@ -149,12 +150,14 @@ class ChatService:
 
     def _prepare(self, state: ChatState) -> ChatState:
         history = self.memory_service.get_recent_messages(state["session_id"])
+        session_state = self.memory_service.get_session_state(state["session_id"])
         rewritten = self._rewrite_question(state["question"], history)
         intent = self._classify_intent(rewritten)
         cache_key = self.cache_service.build_key(
             state["session_id"], rewritten, history, state.get("kb_id", "default")
         )
         state["history"] = history
+        state["session_state"] = session_state
         state["rewritten_question"] = rewritten
         state["intent"] = intent
         state["cache_key"] = cache_key
@@ -182,10 +185,28 @@ class ChatService:
         prompt_history = self._compress_history(state["history"])
         context_text = "\n\n".join([f"- {c['text']}" for c in prompt_contexts])
         history_text = "\n".join([f"{h['role']}: {h['content']}" for h in prompt_history])
+        
+        # 构建会话状态文本
+        session_state = state.get("session_state", {})
+        if session_state:
+            state_text = "\n".join([f"{k}: {v}" for k, v in session_state.items() if v])
+            state_text = self._truncate_text(state_text, self.settings.state_management_max_chars)
+        else:
+            state_text = "无"
+        
+        # 构建历史摘要文本
+        summaries = self.memory_service.get_history_summaries(state["session_id"])
+        if summaries:
+            summary_text = "\n".join([f"- {s['summary']}" for s in summaries])
+        else:
+            summary_text = "无"
+        
         prompt = (
             "你是一个企业知识助手。请基于给定知识上下文回答问题，回答要准确简洁。\n"
             f"问题意图: {state['intent']}\n"
-            f"历史对话:\n{history_text}\n\n"
+            f"会话状态:\n{state_text}\n\n"
+            f"历史对话摘要:\n{summary_text}\n\n"
+            f"最近对话:\n{history_text}\n\n"
             f"知识上下文:\n{context_text}\n\n"
             f"用户问题:\n{state['rewritten_question']}"
         )
@@ -230,6 +251,7 @@ class ChatService:
             "intent": "fact",
             "trace_id": trace_id,
             "history": [],
+            "session_state": {},
             "contexts": [],
             "answer": "",
             "cache_key": "",
@@ -332,10 +354,28 @@ class ChatService:
         prompt_history = self._compress_history(history)
         context_text = "\n\n".join([f"- {c['text']}" for c in prompt_contexts])
         history_text = "\n".join([f"{h['role']}: {h['content']}" for h in prompt_history])
+        
+        # 构建会话状态文本
+        session_state = self.memory_service.get_session_state(session_id)
+        if session_state:
+            state_text = "\n".join([f"{k}: {v}" for k, v in session_state.items() if v])
+            state_text = self._truncate_text(state_text, self.settings.state_management_max_chars)
+        else:
+            state_text = "无"
+        
+        # 构建历史摘要文本
+        summaries = self.memory_service.get_history_summaries(session_id)
+        if summaries:
+            summary_text = "\n".join([f"- {s['summary']}" for s in summaries])
+        else:
+            summary_text = "无"
+        
         prompt = (
             "你是一个企业知识助手。请基于给定知识上下文回答问题，回答要准确简洁。\n"
             f"问题意图: {intent}\n"
-            f"历史对话:\n{history_text}\n\n"
+            f"会话状态:\n{state_text}\n\n"
+            f"历史对话摘要:\n{summary_text}\n\n"
+            f"最近对话:\n{history_text}\n\n"
             f"知识上下文:\n{context_text}\n\n"
             f"用户问题:\n{rewritten_question}"
         )

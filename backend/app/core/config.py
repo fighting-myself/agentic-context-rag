@@ -20,9 +20,11 @@ class Settings(BaseSettings):
     log_max_bytes: int = 5 * 1024 * 1024
     log_backup_count: int = 5
 
-    history_limit: int = 8
-    history_prompt_turns: int = 6
+    history_limit: int = 100
+    history_prompt_turns: int = 5
     history_item_max_chars: int = 180
+    history_summary_turns: int = 5
+    history_summary_max_chars: int = 200
     context_item_max_chars: int = 500
     context_max_items: int = 4
     retrieve_k_vector: int = 8
@@ -30,6 +32,7 @@ class Settings(BaseSettings):
     retrieve_k_final: int = 5
     retrieve_source_max_per_source: int = 2
     retrieve_dedup_jaccard_threshold: float = 0.82
+    state_management_max_chars: int = 500
 
     model_config = SettingsConfigDict(
         env_file=".env",
