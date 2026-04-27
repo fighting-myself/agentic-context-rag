@@ -1,0 +1,14 @@
+# 前端依赖
+frontend/node_modules/
+
+# 本地 Python 虚拟环境
+py312/
+
+# Python 字节码（全项目 + backend 及子目录显式忽略）
+*.pyc
+**/__pycache__/
+backend/**/*.pyc
+backend/**/__pycache__/
+
+# 环境变量文件
+backend/logs/app.log
