@@ -50,8 +50,8 @@ class CacheService:
             {
                 "kb_id": kb_id.strip() or "default",
                 "session_id": session_id,
-                "question": CacheService._normalize_text(question),
-                "history": CacheService._normalize_history(history),
+                "question": cls._normalize_text(question),
+                "history": cls._normalize_history(history),
             },
             ensure_ascii=False,
             sort_keys=True,

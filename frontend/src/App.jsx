@@ -32,6 +32,12 @@ export default function App() {
   const [traceStats, setTraceStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [kbLoading, setKbLoading] = useState(false);
+  const [fileViewer, setFileViewer] = useState({
+    visible: false,
+    source: "",
+    content: "",
+    highlight: "",
+  });
 
   const refreshKbs = useCallback(async () => {
     const res = await listKnowledgeBases();
@@ -134,10 +140,9 @@ export default function App() {
       setMessages((prev) => [
         ...prev,
         { role: "user", content: askText },
-        {
-          role: "assistant",
+        { role: "assistant",
           content: "",
-          cache: false,
+          cache_hit: false,
           contexts: [],
           streaming: true,
           intent: "fact",
@@ -239,6 +244,27 @@ export default function App() {
     setDragActive(false);
     const f = e.dataTransfer.files?.[0];
     if (f) setPendingFile(f);
+  };
+
+  const onViewFile = (source, highlight) => {
+    // 这里简化处理，实际项目中应该从后端获取文件内容
+    // 现在使用模拟数据
+    const mockContent = `# ${source}\n\n这是文件 ${source} 的内容。\n\n${highlight ? `这里是高亮显示的引用内容：${highlight}` : ""}\n\n文件的其他内容...`;
+    setFileViewer({
+      visible: true,
+      source,
+      content: mockContent,
+      highlight,
+    });
+  };
+
+  const closeFileViewer = () => {
+    setFileViewer({
+      visible: false,
+      source: "",
+      content: "",
+      highlight: "",
+    });
   };
 
   return (
@@ -406,7 +432,13 @@ export default function App() {
                           <div className="citations">
                             {m.citations.map((c, j) => (
                               <div key={j} className="citation-item">
-                                <span className="citation-source">[{c.source}]</span>
+                                <span 
+                                  className="citation-source"
+                                  onClick={() => onViewFile(c.source, c.snippet)}
+                                  style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                  [{c.source}]
+                                </span>
                                 <span className="citation-snippet">{String(c.snippet || "").slice(0, 120)}</span>
                                 {j < m.citations.length - 1 && <br />}
                               </div>
@@ -461,6 +493,36 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {/* 文件查看模态框 */}
+      {fileViewer.visible && (
+        <div className="modal-overlay" onClick={closeFileViewer}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{fileViewer.source}</h3>
+              <button className="modal-close" onClick={closeFileViewer}>×</button>
+            </div>
+            <div className="modal-body">
+              <pre className="file-content">
+                {fileViewer.content.split('\n').map((line, i) => (
+                  <div key={i}>
+                    {line.includes(fileViewer.highlight) ? (
+                      <span className="highlight">{line}</span>
+                    ) : (
+                      line
+                    )}
+                  </div>
+                ))}
+              </pre>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={closeFileViewer}>
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
