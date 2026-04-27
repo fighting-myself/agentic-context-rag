@@ -1,0 +1,11 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+langchain==0.3.25
+langchain-openai==0.3.16
+langgraph==0.4.1
+chromadb==1.0.7
+rank-bm25==0.2.2
+redis==5.2.1
+sqlalchemy==2.0.40
+pydantic-settings==2.9.1
+python-json-logger==2.0.7
