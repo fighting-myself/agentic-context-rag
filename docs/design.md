@@ -269,3 +269,17 @@
 - 已完成：
   - `backend/app/core/logging.py` 导入已改为 `from pythonjsonlogger.jsonlogger import JsonFormatter`。
   - 与 `python-json-logger==2.0.7` 的实际模块路径一致，可消除该启动异常。
+
+## 29. 前端 Nginx upstream 可配置（编码前更新）
+- 本轮目标：
+  - 修复单独部署时 Nginx 报错 `host not found in upstream "backend"`。
+- 具体改动点：
+  - 使用官方镜像 `templates` + `envsubst`，通过环境变量 `BACKEND_HOST` 指定后端主机名。
+  - `docker-compose.yml` 为 frontend 显式设置 `BACKEND_HOST=backend`。
+  - `README.md` 单独 `docker run` 示例增加 `-e BACKEND_HOST=agentic-rag-backend`。
+
+## 30. 前端 Nginx upstream 可配置（编码后更新）
+- 已完成：
+  - 新增 `frontend/templates/default.conf.template`，`proxy_pass` 使用 `${BACKEND_HOST}`。
+  - `frontend/Dockerfile` 默认 `ENV BACKEND_HOST=backend`，并复制模板到 `/etc/nginx/templates/`。
+  - 删除写死 upstream 的 `frontend/nginx.conf`，避免与单独部署场景冲突。

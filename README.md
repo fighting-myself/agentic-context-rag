@@ -36,6 +36,7 @@
 - 前端: `http://localhost:8500`
 - 后端: `http://localhost:8501/healthz`
 - 前端通过 Nginx 反向代理 `/api/*` 到后端容器（同机部署默认已打通）。
+- 说明：`docker compose` 下 Compose 服务名为 `backend`，前端镜像默认 `BACKEND_HOST=backend`；若你单独 `docker run` 且后端容器名不是 `backend`，启动前端时必须设置 `-e BACKEND_HOST=<后端容器名>`。
 
 ### 3.3 分别构建前后端镜像
 - 构建后端镜像（项目根目录执行）：
@@ -48,8 +49,8 @@
    - `docker network create agentic-rag-net`
 2. 启动后端：
    - `docker run -d --name agentic-rag-backend --network agentic-rag-net --env-file ./backend/.env.example -p 8501:8000 -v ./backend/data:/app/backend/data -v ./backend/logs:/app/backend/logs agentic-rag-backend:latest`
-3. 启动前端：
-   - `docker run -d --name agentic-rag-frontend --network agentic-rag-net -p 8500:80 agentic-rag-frontend:latest`
+3. 启动前端（`BACKEND_HOST` 必须与后端容器名一致，否则 Nginx 无法解析 upstream）：
+   - `docker run -d --name agentic-rag-frontend --network agentic-rag-net -e BACKEND_HOST=agentic-rag-backend -p 8500:80 agentic-rag-frontend:latest`
 
 ### 3.5 前后端不在同一网络时（必须先创建并加入同一网络）
 - 如果容器已在不同网络，先创建目标网络：

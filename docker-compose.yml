@@ -20,6 +20,8 @@ services:
   frontend:
     build:
       context: ./frontend
+    environment:
+      BACKEND_HOST: backend
     ports:
       - "8500:80"
     depends_on:
