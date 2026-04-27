@@ -324,3 +324,37 @@ textarea {
 .spacer {
   height: 12px;
 }
+
+.citations {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(61, 139, 253, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(61, 139, 253, 0.2);
+}
+
+.citation-item {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.citation-source {
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 8px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.citation-source:hover {
+  color: var(--accent-hover);
+}
+
+.citation-snippet {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border-left: 2px solid var(--accent);
+}

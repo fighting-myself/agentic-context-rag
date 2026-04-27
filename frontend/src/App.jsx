@@ -158,7 +158,7 @@ export default function App() {
               if (idx >= 0 && next[idx].role === "assistant") {
                 next[idx] = {
                   ...next[idx],
-                  cache: meta.cache_hit,
+                  cache_hit: meta.cache_hit,
                   contexts: meta.contexts || [],
                   intent: meta.intent || "fact",
                   rewrittenQuestion: meta.rewritten_question || askText,
@@ -398,16 +398,20 @@ export default function App() {
                     <div className="bubble-meta">
                       意图 {m.intent || "fact"} · 置信度 {(Number(m.confidence) || 0).toFixed(2)} · 改写 {m.rewrittenQuestion || "-"}
                       <br />
-                      缓存 {String(m.cache)} · 命中片段 {m.contexts?.length ?? 0}
+                      缓存 {String(m.cache_hit)} · 命中片段 {m.contexts?.length ?? 0}
                       {m.citations?.length > 0 && (
                         <>
                           <br />
-                          引用：{m.citations.map((c, j) => (
-                            <span key={j}>
-                              [{c.source}] {String(c.snippet || "").slice(0, 48)}
-                              {j < m.citations.length - 1 ? " · " : ""}
-                            </span>
-                          ))}
+                          引用：
+                          <div className="citations">
+                            {m.citations.map((c, j) => (
+                              <div key={j} className="citation-item">
+                                <span className="citation-source">[{c.source}]</span>
+                                <span className="citation-snippet">{String(c.snippet || "").slice(0, 120)}</span>
+                                {j < m.citations.length - 1 && <br />}
+                              </div>
+                            ))}
+                          </div>
                         </>
                       )}
                     </div>
